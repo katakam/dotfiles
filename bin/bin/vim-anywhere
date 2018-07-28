@@ -1,8 +1,18 @@
 #!/bin/sh
 
-file=$(mktemp)
-termite -e "nvim -c 'startinsert | set spell' '$file'"
+FILE=$(mktemp --suffix=vim-anywhere.txt)
+function finish {
+  rm $FILE
+}
+trap finish EXIT
 
-xdotool type --clearmodifiers --delay 0 --file $file
+WINDOW=$(xdotool getwindowfocus)
+xdotool key ctrl+a
+xclip -o > $FILE
+termite -e "nvim -c 'set tw=0 | set spell' '$FILE'"
 
-rm $file
+if [ $? -eq 0 ]; then
+  cat $FILE | xclip -sel clipboard
+  xdotool windowfocus --sync $WINDOW
+  xdotool key ctrl+a ctrl+v
+fi
