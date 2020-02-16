@@ -1,0 +1,33 @@
+---
+- name: Install elm + tooling
+  become: false
+  npm:
+    global: false
+    name: "{{ item }}"
+    path: ~/apps/node/
+  loop:
+    - "elm"
+    - "elm-test"
+    - "elm-oracle"
+    - "elm-format"
+    - "@elm-tooling/elm-language-server"
+- name: Create symlink for elm tools
+  file:
+    src: ~/apps/node/node_modules/{{ item }}/bin/{{ item }}
+    dest: ~/bin/{{ item }}
+    state: link
+  loop:
+    - elm
+    - elm-format
+    - elm-oracle
+    - elm-test
+- name: Create symlink for elm-language-server
+  file:
+    src: ~/apps/node/node_modules/@elm-tooling/elm-language-server/out/index.js
+    dest: ~/bin/elm-lsp
+    state: link
+- name: Create symlink for elm-analyse
+  file:
+    src: ~/apps/node/node_modules/elm-analyse/dist/app/bin/index.js
+    dest: ~/bin/elm-analyse
+    state: link

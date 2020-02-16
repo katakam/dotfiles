@@ -118,6 +118,7 @@ local function setup()
     api.nvim_command("autocmd Filetype rust lua add_client({'rls'}, {root={'Cargo.toml', '.git'}})")
     api.nvim_command("autocmd Filetype lua lua add_client({'lua-lsp'})")
     api.nvim_command("autocmd Filetype html lua add_client({'json-languageserver', '--stdio'}, {name='json-ls'})")
+    api.nvim_command("autocmd Filetype elm lua add_client({'elm-lsp'}, {root={'elm.json', '.git'}})")
 end
 
 --- @export
