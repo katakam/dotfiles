@@ -110,4 +110,5 @@ if has('nvim-0.5')
       au Filetype json lua LspConf.add_client({'json-languageserver', '--stdio'}, {name='json-ls'})
       au BufEnter,BufWrite,InsertLeave,CursorHoldI,CursorHold * lua LspDiagnostics.show_diagnostics()
     augroup end
+    command LspShowDiagnosticsInQuickfix lua LspDiagnostics.show_all_diagnostics_in_quickfix()
 endif

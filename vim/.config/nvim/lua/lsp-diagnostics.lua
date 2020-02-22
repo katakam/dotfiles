@@ -40,8 +40,6 @@ local function save_diagnostics(bufnr, diagnostics)
       diagnostics = {diagnostics, 't', true};
     }
     if not diagnostics then return end
-    bufnr = bufnr == 0 and api.nvim_get_current_buf() or bufnr
-
     if not diagnostics_by_buffer[bufnr] then
       -- Clean up our data when the buffer unloads.
       api.nvim_buf_attach(bufnr, false, {
@@ -105,8 +103,8 @@ end
 
 
 local function popup_for_current_line(buf_diagnostics)
-    local _, lnum, col, _ = unpack(vim.fn.getpos('.'))
-    local line_diagnostics = buf_diagnostics[lnum - 1]
+    local row, col = unpack(api.nvim_win_get_cursor(0))
+    local line_diagnostics = buf_diagnostics[row - 1]
     if not line_diagnostics then return end
     local lines = {}
     for _, d in ipairs(line_diagnostics) do
@@ -129,8 +127,23 @@ function M.show_diagnostics()
     if not buf_diagnostics then return end
     update_buf_loclist(bufnr, buf_diagnostics)
     update_highlights(bufnr, buf_diagnostics)
-    popup_for_current_line(buf_diagnostics)
+    -- popup_for_current_line(buf_diagnostics)
 end
 
+
+function M.show_all_diagnostics_in_quickfix()
+    local all_items = {}
+    for bufnr, buf_diag in ipairs(diagnostics_by_buffer) do
+        for _, item in ipairs(diagnostics_to_items(bufnr, buf_diag)) do
+            table.insert(all_items, item)
+        end
+    end
+    vim.fn.setqflist({}, ' ', {
+        title = 'Language Server';
+        items = all_items
+    })
+    api.nvim_command("copen")
+    api.nvim_command("wincmd p")
+end
 
 return M
