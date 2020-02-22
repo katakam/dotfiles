@@ -1,14 +1,23 @@
 local myutil = require 'util'
 local api = vim.api
+local util = vim.lsp.util
+local protocol = vim.lsp.protocol
 
 -- {<bufnr>: {<lineNr>: {diagnostics}}}
 local diagnostics_by_buffer = {}
 local M = {}
 
+local ns = api.nvim_create_namespace('lsp-diagnostics')
+local hl_underline = 'LspDiagnosticsUnderline'
+local hlmap = {
+    [protocol.DiagnosticSeverity.Error]='Error',
+    [protocol.DiagnosticSeverity.Warning]='Warning',
+    [protocol.DiagnosticSeverity.Information]='Information',
+    [protocol.DiagnosticSeverity.Hint]='Hint',
+}
 
 local function diagnostics_to_items(bufnr, buf_diagnostics)
     local items = {}
-    if not buf_diagnostics then return items end
     for linenr, diagnostics in pairs(buf_diagnostics) do
         if #diagnostics > 0 then
             local d = diagnostics[1]
@@ -16,7 +25,7 @@ local function diagnostics_to_items(bufnr, buf_diagnostics)
                 bufnr = bufnr,
                 lnum = linenr + 1,
                 vcol = 1,
-                col = d.range.start.character,
+                col = d.range.start.character + 1,
                 text = d.message
             })
         end
@@ -79,10 +88,48 @@ local function update_buf_loclist(bufnr, buf_diagnostics)
 end
 
 
+local function update_highlights(bufnr, buf_diagnostics)
+    for linenr, diagnostics in pairs(buf_diagnostics) do
+        for _, d in ipairs(diagnostics) do
+            api.nvim_buf_add_highlight(
+                bufnr,
+                ns,
+                hl_underline .. hlmap[d.severity],
+                linenr,
+                d.range.start.character,
+                d.range["end"].character
+            )
+        end
+    end
+end
+
+
+local function popup_for_current_line(buf_diagnostics)
+    local _, lnum, col, _ = unpack(vim.fn.getpos('.'))
+    local line_diagnostics = buf_diagnostics[lnum - 1]
+    if not line_diagnostics then return end
+    local lines = {}
+    for _, d in ipairs(line_diagnostics) do
+        if d.range.start.character < col and d.range['end'].character > col then
+            table.insert(lines, d.message)
+        end
+    end
+    if lines then
+        util.focusable_preview('lsp-diagnostics', function()
+            return lines, 'plaintext'
+        end)
+    end
+end
+
+
 function M.show_diagnostics()
     local bufnr = api.nvim_get_current_buf()
     local buf_diagnostics = diagnostics_by_buffer[bufnr]
+    api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
+    if not buf_diagnostics then return end
     update_buf_loclist(bufnr, buf_diagnostics)
+    update_highlights(bufnr, buf_diagnostics)
+    popup_for_current_line(buf_diagnostics)
 end
 
 
