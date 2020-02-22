@@ -1,23 +1,8 @@
+local diagnostics = require 'lsp-diagnostics'
 local myutil = require 'util'
-local util = require 'vim.lsp.util'
 local lsp = require 'vim.lsp'
 local api = vim.api
-
 local lsps_dirs = {}
-
-local default_diagnostics_callback = lsp.callbacks['textDocument/publishDiagnostics']
-local function diagnostics_callback(err, method, result, client_id)
-    default_diagnostics_callback(err, method, result, client_id)
-    if result and result.diagnostics and result.uri then
-        local current_buf = api.nvim_get_current_buf()
-        if vim.uri_to_bufnr(result.uri) == current_buf and myutil.exists(vim.uri_to_fname(result.uri)) then
-            for _, v in ipairs(result.diagnostics) do
-                v.uri = v.uri or result.uri
-            end
-            util.set_loclist(result.diagnostics)
-        end
-    end
-end
 
 local function add_client_by_cfg(config, root_markers)
     local bufnr = api.nvim_get_current_buf()
@@ -66,7 +51,7 @@ end
 local function mk_config()
     return {
         callbacks = {
-            ["textDocument/publishDiagnostics"] = diagnostics_callback,
+            ["textDocument/publishDiagnostics"] = diagnostics.publishDiagnostics;
         };
         on_attach = enable_mappings_on_buffer;
     }
