@@ -107,5 +107,6 @@ if has('nvim-0.5')
       au Filetype rust lua LspConf.add_client({'rls'}, {root={'Cargo.toml', '.git'}})
       au Filetype lua lua LspConf.add_client({'lua-lsp'})
       au Filetype json lua LspConf.add_client({'json-languageserver', '--stdio'}, {name='json-ls'})
+      au BufEnter,BufWrite,InsertLeave,CursorHoldI,CursorHold * lua LspConf.show_diagnostics()
     augroup end
 endif

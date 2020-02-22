@@ -5,18 +5,11 @@ local api = vim.api
 
 local lsps_dirs = {}
 
-local default_diagnostics_callback = lsp.callbacks['textDocument/publishDiagnostics']
 local function diagnostics_callback(err, method, result, client_id)
-    default_diagnostics_callback(err, method, result, client_id)
-    if result and result.diagnostics and result.uri then
-        local current_buf = api.nvim_get_current_buf()
-        if vim.uri_to_bufnr(result.uri) == current_buf and myutil.exists(vim.uri_to_fname(result.uri)) then
-            for _, v in ipairs(result.diagnostics) do
-                v.uri = v.uri or result.uri
-            end
-            util.set_loclist(result.diagnostics)
-        end
-    end
+    if not result then return end
+    local uri = result.uri
+    local bufnr = vim.uri_to_bufnr(uri)
+    lsp.util.buf_diagnostics_save(bufnr, result.diagnostics)
 end
 
 local function add_client_by_cfg(config, root_markers)
@@ -103,6 +96,13 @@ end
 function M.start_go_ls()
     local path = os.getenv("GOPATH") .. "/bin/go-langserver"
     M.add_client({path, '-gocodecompletion'}, {name = 'gols'})
+end
+
+function M.show_diagnostics()
+    local bufnr = api.nvim_get_current_buf()
+    lsp.util.buf_diagnostics_clear_highlights(bufnr)
+    lsp.util.buf_diagnostics_underline(bufnr)
+    lsp.util.buf_diagnostics_virtual_text(bufnr)
 end
 
 --- @export
